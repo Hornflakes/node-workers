@@ -9,9 +9,10 @@ const workers = [];
 
 console.log('hash:', hash);
 console.time('cracked in');
-for (let i = 0, j = 1; j <= threadsCount; i++, j++) {
+let i = 0;
+while (i < threadsCount) {
   const worker = new Worker('./worker.js', {
-    workerData: { start: i * numbersPerWorker, end: j * numbersPerWorker, hash: hash },
+    workerData: { start: i * numbersPerWorker, end: ++i * numbersPerWorker, hash: hash },
   });
   workers.push(worker);
   worker.on('message', (e) => handleWorkerMsg(e));
