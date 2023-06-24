@@ -1,27 +1,42 @@
-const os = require('os');
+const { mergeSort } = require('./merge-sort');
 const { Worker } = require('worker_threads');
 
-const hash = '16cf868a5020546dc8b3ba16b37dc3ff';
-const maxNumber = 10_000_000;
-const threadsCount = os.cpus().length;
-const numbersPerWorker = Math.round(maxNumber / threadsCount);
+const max = 100_000;
+const arr = [];
+for (let i = 0; i < max; i++) {
+    arr.push(Math.round(Math.random() * max));
+}
+
+console.time('main');
+mergeSort(arr);
+console.timeEnd('main');
+
+console.time('4 workers');
+const workersCount = 4;
+const workerArrLen = max / workersCount;
 const workers = [];
+const sortedArrs = [];
+let finishedWorkers = 0;
 
-console.log('hash:', hash);
-console.time('cracked in');
-let i = 0;
-while (i < threadsCount) {
-  const worker = new Worker('./worker.js', {
-    workerData: { start: i * numbersPerWorker, end: ++i * numbersPerWorker, hash: hash },
-  });
-  workers.push(worker);
-  worker.on('message', (e) => handleWorkerMsg(e));
+for (let i = 0, j = 0; i < max; i += workerArrLen, j++) {
+    const workerArr = arr.slice(i, i + workerArrLen);
+    const worker = new Worker('./worker.js', { workerData: { arr: workerArr, arrNum: j } });
+    workers.push(worker);
+    worker.on('message', (e) => handleWorkerMsg(e));
 }
 
-function handleWorkerMsg(e) {
-  console.log('----------------');
-  console.log('cracked: ' + e);
-  console.log('----------------');
-  console.timeEnd('cracked in');
-  workers.forEach((w) => w.terminate());
-}
+const handleWorkerMsg = (e) => {
+    sortedArrs[e.arrNum] = e.sortedArr;
+    finishedWorkers++;
+
+    if (finishedWorkers == workersCount) {
+        workers.forEach((w) => w.terminate());
+
+        const sortedArr = [];
+        sortedArrs.forEach((arr) => {
+            sortedArr.push(...arr);
+        });
+        console.log(sortedArr);
+        console.timeEnd('4 workers');
+    }
+};

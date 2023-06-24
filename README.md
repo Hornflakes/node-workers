@@ -1,3 +1,3 @@
-# workers-crack-md5
+# node-workers
 
-node.js workers crack md5
+node.js workers doing merge sort
